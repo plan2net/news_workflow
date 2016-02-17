@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<xliff version="1.0">
+    <file source-language="de" datatype="plaintext" original="messages" product-name="evva_references">
+        <header/>
+        <body>
+            <trans-unit id="notification">
+                <source>Verständigung</source>
+            </trans-unit>
+            <trans-unit id="publicDisplay">
+                <source>Auf der Startseite veröffentlichen</source>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>
