@@ -9,6 +9,9 @@
             <trans-unit id="publicDisplay">
                 <target>Publish on home page</target>
             </trans-unit>
+            <trans-unit id="release">
+                <target>Homepage release</target>
+            </trans-unit>
         </body>
     </file>
 </xliff>

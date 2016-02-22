@@ -9,6 +9,9 @@
             <trans-unit id="publicDisplay">
                 <source>Auf der Startseite veröffentlichen</source>
             </trans-unit>
+            <trans-unit id="release">
+                <source>Freigeben für Startseite</source>
+            </trans-unit>
         </body>
     </file>
 </xliff>

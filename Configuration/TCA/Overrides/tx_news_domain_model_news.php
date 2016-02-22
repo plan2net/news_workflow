@@ -9,7 +9,7 @@ $temporaryColumn = array(
         'label' => 'LLL:EXT:news_workflow/Resources/Private/Language/locallang.xlf:publicDisplay',
         'config' => array(
             'type' => 'user',
-            'userFunc' => 'Plan2net\\NewsWorkflow\\Controller\\WorkflowController->getButton'
+            'userFunc' => 'Plan2net\NewsWorkflow\Controller\WorkflowController->getButton'
         )
     )
 );
