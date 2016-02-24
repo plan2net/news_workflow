@@ -1,0 +1,10 @@
+config.tx_extbase.persistence.classes {
+    Plan2net\NewsWorkflow\Domain\Model\Relation {
+        mapping {
+            tableName = tx_newsworkflow_domain_model_relation
+            columns {
+                crdate.mapOnProperty = dateCreated
+            }
+        }
+    }
+}
