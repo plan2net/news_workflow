@@ -71,7 +71,9 @@ class WorkflowController {
         $querySettings->setRespectStoragePage(false); // ignore storage pid
         $newsRepository->setDefaultQuerySettings($querySettings);
 
+
         $originalNews = $newsRepository->findByUid($id, false); // we have to explicitly set respectEnableFields to false here again
+
         if ($originalNews !== null) {
             try {
                 $configuration = $this->getConfiguration($originalNews->getPid());
@@ -102,13 +104,15 @@ class WorkflowController {
                 return true;
             }
             else {
-
                 return false;
-
             }
         }
     }
 
+    /**
+     * @param $params
+     * @return string
+     */
     public function getButton($params) {
         $newsRecordUid = (integer)$params['row']['uid'];
         $path = ExtensionManagementUtility::extRelPath('news_workflow') . 'Resources/Public/Javascript/main.js';
@@ -118,6 +122,7 @@ class WorkflowController {
 
         return $btn;
     }
+
 
     /**
      * @param \GeorgRinger\News\Domain\Model\News $news
@@ -202,8 +207,10 @@ class WorkflowController {
 
         $relation->setUidNews($uidNews);
         $relation->setUidNewsOriginal($uidNewsOriginal);
+        $relation->setPidTarget($pid);
         $relation->setPid($pid);
         $relation->setDateCreated(time());
+        $relation->setSendMail(0);
 
         $relationRepository->add($relation);
         $relationRepository->persistAll(); // write to database immediately

@@ -19,9 +19,20 @@ class Relation extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
     protected $uidNewsOriginal;
 
     /**
+     * @var int
+     */
+    protected $pidTarget;
+
+    /**
      * @var integer
      */
     protected $dateCreated;
+
+    /**
+     * @var int
+     */
+    protected $sendMail;
+
 
     /**
      * @return int
@@ -70,6 +81,44 @@ class Relation extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
     {
         $this->dateCreated = $dateCreated;
     }
+
+    /**
+     * @return int
+     */
+    public function getPidTarget()
+    {
+        return $this->pidTarget;
+    }
+
+    /**
+     * @param int $pidTarget
+     */
+    public function setPidTarget($pidTarget)
+    {
+        $this->pidTarget = $pidTarget;
+    }
+
+    /**
+     * @return int
+     */
+    public function getSendMail()
+    {
+        return $this->sendMail;
+    }
+
+    /**
+     * @param int $sendMail
+     */
+    public function setSendMail($sendMail)
+    {
+        $this->sendMail = $sendMail;
+    }
+
+
+
+
+
+
 
 
 

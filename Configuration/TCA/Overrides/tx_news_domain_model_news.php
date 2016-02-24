@@ -11,7 +11,17 @@ $temporaryColumn = array(
             'type' => 'user',
             'userFunc' => 'Plan2net\NewsWorkflow\Controller\WorkflowController->getButton'
         )
-    )
+    ),
+    'author' => array(
+        'exclude' => 1,
+        'l10n_mode' => 'mergeIfNotBlank',
+        'label' => 'LLL:EXT:cms/locallang_tca.xlf:pages.author_formlabel',
+        'config' => array(
+            'type' => 'input',
+            'size' => 30,
+            'eval' => 'required', // because news workflow needs a person that can be contacted after publishing a record
+        )
+    ),
 );
 
 

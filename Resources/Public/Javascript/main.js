@@ -10,7 +10,7 @@ function ajaxCall (newsId, btn) {
 
                 TYPO3.Flashmessage.display(
                     TYPO3.Severity.error,
-                    "Datensatz wurde übermittelt",
+                    "Fehler beim Kopieren der News.",
                     xhr.responseText,
                     5
                 );
@@ -18,7 +18,7 @@ function ajaxCall (newsId, btn) {
             } else {
                 TYPO3.Flashmessage.display(
                     TYPO3.Severity.ok,
-                    "Datensatz wurde übermittelt",
+                    "News wurde erfolgreich übermittelt.",
                     xhr.responseText,
                     5
                 );
