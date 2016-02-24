@@ -1,7 +1,8 @@
 1) Install Extension (using composer is also possible)
 2) Create Folder where to put the copied news records
 3) Configure Extension
-   Set the following PageTS
+   Set the following PageTS in the folder where the original news records are located
+
         user.tx_news_workflow {
         # PID of target folder for copy operation (folder that form step 2)
             approvalTargetPid = 12708

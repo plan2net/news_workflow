@@ -58,11 +58,11 @@ class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
             $mail->setBody($msg);
             $result = $mail->send();
 
-            /*if($result == $countRecipients) {
+            if($result == $countRecipients) {
                 $this->setSendMailValue($records);
             } else {
                 $this->getLogger()->error("We are sorry!Something went wrong by delivering the email.");
-            }*/
+            }
 
         } else {
 
@@ -101,6 +101,10 @@ class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
 
     }
 
+    /**
+     * @param $records
+     * @return string
+     */
     protected function getMessage($records) {
         $count = count($records);
         $msg = "Es wurden neue News kopiert! Anzahl: " . $count . ".\n";
@@ -143,13 +147,18 @@ class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
         return $newsRecord;
     }
 
+    /**
+     * Sets the sendMail value to true but only if the recipients got a mail
+     * @param $records
+     * @throws \TYPO3\CMS\Extbase\Persistence\Exception\IllegalObjectTypeException
+     */
     protected function setSendMailValue ($records) {
 
         /** @var \Plan2net\NewsWorkflow\Domain\Repository\RelationRepository $workflowRepository */
         $workflowRepository = $this->objectManager->get('Plan2net\NewsWorkflow\Domain\Repository\RelationRepository');
 
         foreach($records as $record) {
-            $record->setSendMail = 1;
+            $record->setSendMail(1);
             $workflowRepository->add($record);
         }
 
