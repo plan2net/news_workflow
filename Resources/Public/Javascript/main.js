@@ -6,12 +6,23 @@ function ajaxCall (newsId, btn) {
         onComplete: function (xhr, json) {
             console.log(xhr);
 
-            TYPO3.Flashmessage.display(
-                TYPO3.Severity.ok,
-                "Datensatz wurde übermittelt",
-                xhr.responseText,
-                5
-            );
+            if(xhr.status == 500) {
+
+                TYPO3.Flashmessage.display(
+                    TYPO3.Severity.error,
+                    "Datensatz wurde übermittelt",
+                    xhr.responseText,
+                    5
+                );
+
+            } else {
+                TYPO3.Flashmessage.display(
+                    TYPO3.Severity.ok,
+                    "Datensatz wurde übermittelt",
+                    xhr.responseText,
+                    5
+                );
+            }
         }
     });
 

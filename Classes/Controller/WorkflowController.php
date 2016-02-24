@@ -38,7 +38,13 @@ class WorkflowController {
         $newsId = (integer) GeneralUtility::_GET('newsId');
         try {
             $success = $this->copyNews($newsId);
-            $ajaxObj->addContent('success', $success);
+
+            if($success) {
+                $ajaxObj->addContent('success', LocalizationUtility::translate('success_msg', 'news_workflow'));
+
+            } else {
+                $ajaxObj->setError(LocalizationUtility::translate('error_msg', 'news_workflow'));
+            }
         }
         catch (\Exception $e) {
             if ($e->getCode() == self::ERROR_NO_CONFIGURATION) {
@@ -93,13 +99,11 @@ class WorkflowController {
                 foreach ($copyActionInformation as $uidNewsOriginal => $uidNews) {
                     $this->setWorkflowRelation($uidNews, $uidNewsOriginal, (integer)$configuration['approvalTargetPid']);
                 }
-
-                return "Done!";
-
+                return true;
             }
             else {
 
-                return "Something went wrong!";
+                return false;
 
             }
         }
@@ -179,6 +183,12 @@ class WorkflowController {
         return $this->logger;
     }
 
+    /**
+     * @param $uidNews
+     * @param $uidNewsOriginal
+     * @param int $pid
+     * @throws \TYPO3\CMS\Extbase\Persistence\Exception\IllegalObjectTypeException
+     */
     protected function setWorkflowRelation ($uidNews, $uidNewsOriginal, $pid = 0)
     {
 
