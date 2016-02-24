@@ -12,8 +12,11 @@
             <trans-unit id="release">
                 <source>Freigeben für Startseite</source>
             </trans-unit>
+            <trans-unit id="alreadyReleased">
+                <source>Bereits Freigegeben</source>
+            </trans-unit>
             <trans-unit id="success_msg">
-                <source>Datensatz wurde erfolgreich veröffentlicht!</source>
+                <source>News Beitrag wurde erfolgreich veröffentlicht!</source>
             </trans-unit>
             <trans-unit id="error_msg">
                 <source>Leider ist ein Fehler aufgetreten. Bitte wenden Sie sich an den Server Administrator!</source>

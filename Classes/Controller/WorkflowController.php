@@ -117,8 +117,16 @@ class WorkflowController {
         $newsRecordUid = (integer)$params['row']['uid'];
         $path = ExtensionManagementUtility::extRelPath('news_workflow') . 'Resources/Public/Javascript/main.js';
         $trans = LocalizationUtility::translate('release', 'news_workflow');
-        $script = '<script src="'. $path .'"></script>';
-        $btn = '<button onclick="ajaxCall(' . $newsRecordUid . ',this); return false;">'. $trans .'</button><div class="msg"></div>' . $script;
+        $trans2 = LocalizationUtility::translate('alreadyReleased', 'news_workflow');
+        $script = '<script src="' . $path . '"></script>';
+
+        $isCopied = $this->isRecordAlreadyCopied($newsRecordUid);
+
+        if($isCopied) {
+            $btn = '<button onclick="ajaxCall(' . $newsRecordUid . ',this); return false;" style="background:white;color:#D3D3D3;border:none;" disabled>' . $trans2 . $script;
+        } else {
+            $btn = '<button onclick="ajaxCall(' . $newsRecordUid . ',this); return false;">' . $trans . $script;
+        }
 
         return $btn;
     }
@@ -214,6 +222,31 @@ class WorkflowController {
 
         $relationRepository->add($relation);
         $relationRepository->persistAll(); // write to database immediately
+    }
+
+    /**
+     * @param $uid
+     * @return bool
+     */
+    protected function isRecordAlreadyCopied($uid) {
+
+        $objectManager = $this->getObjectManager();
+
+        /** @var \Plan2net\NewsWorkflow\Domain\Repository\RelationRepository $relationRepository */
+        $relationRepository = $objectManager->get('Plan2net\NewsWorkflow\Domain\Repository\RelationRepository');
+
+        $querySettings = $relationRepository->createQuery()->getQuerySettings();
+        $querySettings->setIgnoreEnableFields(true); // ignore hidden and deleted
+        $querySettings->setRespectStoragePage(false); // ignore storage pid
+        $relationRepository->setDefaultQuerySettings($querySettings);
+        $record = $relationRepository->findOriginalRecord($uid);
+
+        if(is_object($record)) {
+            return true;
+        } else {
+            return false;
+        }
+
     }
 
 }

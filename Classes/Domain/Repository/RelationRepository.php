@@ -25,4 +25,13 @@ class RelationRepository extends Repository
         return $query->execute();
     }
 
+    public function findOriginalRecord ($uid) {
+        $query = $this->createQuery();
+        $query->matching(
+          $query->like('uid_news_original', $uid)
+        );
+
+        return $query->execute()->getFirst();
+    }
+
 }
