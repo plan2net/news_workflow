@@ -47,7 +47,7 @@ class WorkflowController {
             }
         }
         catch (\Exception $e) {
-            if ($e->getCode() == self::ERROR_NO_CONFIGURATION) {
+            if ($e->getCode()) {
                 $this->getLogger()->error($e->getMessage());
                 $ajaxObj->addContent('error', $e->getMessage());
             }
@@ -93,6 +93,7 @@ class WorkflowController {
                     $copiedNews = $newsRepository->findByUid($copyNewsId, false);
                     $copiedNews->setHidden(true);
                     $this->addApprovalCategories($copiedNews, $configuration['approvalCategories']); // category ids to add
+                    $newsRepository->add($copiedNews);
                 }
             }
 
