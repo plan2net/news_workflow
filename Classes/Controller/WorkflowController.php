@@ -92,7 +92,10 @@ class WorkflowController {
                 foreach ($copyActionInformation as $originalNewsId => $copyNewsId) {
                     $copiedNews = $newsRepository->findByUid($copyNewsId, false);
                     $copiedNews->setHidden(true);
-                    $this->addApprovalCategories($copiedNews, $configuration['approvalCategories']); // category ids to add
+                    $this->addApprovalCategories($copiedNews,
+                        GeneralUtility::trimExplode(',', $configuration['approvalCategories']),
+                        (boolean)$configuration['removePreviousCategories']
+                    );
                     $newsRepository->add($copiedNews);
                 }
             }
@@ -135,23 +138,32 @@ class WorkflowController {
 
     /**
      * @param \GeorgRinger\News\Domain\Model\News $news
-     * @param $categoryIds
+     * @param array $categoryIds
+     * @param boolean $removePreviousCategories
      */
-    protected function addApprovalCategories($news, $categoryIds) {
+    protected function addApprovalCategories($news, $categoryIds, $removePreviousCategories) {
         $objectManager = $this->getObjectManager();
         /** @var \GeorgRinger\News\Domain\Repository\CategoryRepository $categoryRepository */
         $categoryRepository = $objectManager->get('GeorgRinger\News\Domain\Repository\CategoryRepository');
 
-        if (!is_array($categoryIds)) {
-            $categoryIds = GeneralUtility::trimExplode(',', $categoryIds);
+        $categories = $news->getCategories();
+
+        if ($removePreviousCategories === true) {
+            $clonedCategories = clone $categories;
+            foreach ($clonedCategories as $category) {
+                $categories->detach($category);
+            }
         }
+
         foreach ($categoryIds as $categoryId) {
             /** @var \GeorgRinger\News\Domain\Model\Category $category */
             $category = $categoryRepository->findByUid($categoryId);
             if ($category !== null) {
-                $news->addCategory($category);
+               $categories->attach($category);
             }
         }
+
+        $news->setCategories($categories);
     }
 
     /**
@@ -207,9 +219,17 @@ class WorkflowController {
     {
 
         $objectManager = $this->getObjectManager();
+        $currentUserID = $GLOBALS["BE_USER"]->user['uid'];
 
         /** @var \Plan2net\NewsWorkflow\Domain\Repository\RelationRepository $relationRepository */
         $relationRepository = $objectManager->get('Plan2net\NewsWorkflow\Domain\Repository\RelationRepository');
+
+        /** @var \TYPO3\CMS\Extbase\Domain\Repository\BackendUserRepository $beuserRepository */
+        $beuserRepository = $objectManager->get('TYPO3\CMS\Extbase\Domain\Repository\BackendUserRepository');
+
+        /** @var \TYPO3\CMS\Beuser\Domain\Model\BackendUser $currentUser */
+        $currentUser = $beuserRepository->findByUid($currentUserID);
+
 
         /** @var \Plan2net\NewsWorkflow\Domain\Model\Relation $relation */
         $relation = $objectManager->get('Plan2net\NewsWorkflow\Domain\Model\Relation');
@@ -220,6 +240,8 @@ class WorkflowController {
         $relation->setPid($pid);
         $relation->setDateCreated(time());
         $relation->setSendMail(0);
+
+        $relation->setReleasePerson($currentUser);
 
         $relationRepository->add($relation);
         $relationRepository->persistAll(); // write to database immediately

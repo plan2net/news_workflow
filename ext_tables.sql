@@ -6,6 +6,8 @@ uid_news_original INT(11) NOT NULL,
 pid_target INT(11) NOT NULL,
 send_mail INT(11) NOT NULL,
 crdate INT(11) unsigned DEFAULT '0' NOT NULL,
+release_person INT(11) NOT NULL,
+compare_hash tinytext,
 PRIMARY KEY (uid),
 KEY parent (pid)
 );

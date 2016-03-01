@@ -33,6 +33,18 @@ class Relation extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
      */
     protected $sendMail;
 
+    /**
+     * @var \TYPO3\CMS\Beuser\Domain\Model\BackendUser
+     */
+    protected $releasePerson;
+
+
+    /**
+     * @var string
+     */
+    protected $compareHash;
+
+
 
     /**
      * @return int
@@ -113,6 +125,42 @@ class Relation extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
     {
         $this->sendMail = $sendMail;
     }
+
+    /**
+     * @return \TYPO3\CMS\Beuser\Domain\Model\BackendUser
+     */
+    public function getReleasePerson()
+    {
+        return $this->releasePerson;
+    }
+
+    /**
+     * @param \TYPO3\CMS\Beuser\Domain\Model\BackendUser $releasePerson
+     */
+    public function setReleasePerson($releasePerson)
+    {
+        $this->releasePerson = $releasePerson;
+    }
+
+
+
+    /**
+     * @return string
+     */
+    public function getCompareHash()
+    {
+        return $this->compareHash;
+    }
+
+    /**
+     * @param string $compareHash
+     */
+    public function setCompareHash($compareHash)
+    {
+        $this->compareHash = $compareHash;
+    }
+
+
 
 
 

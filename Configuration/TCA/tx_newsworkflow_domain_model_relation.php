@@ -48,6 +48,22 @@
                 'readOnly' => true
             )
         ),
+        'release_person' => array (
+            'exclude' => 0,
+            'label' => 'release-person',
+            'config' => array (
+                'type' => 'input',
+                'readOnly' => true
+            )
+        ),
+        'compare_hash' => array(
+            'exclude' => 0,
+            'label' => 'compare-hash',
+            'config' => array(
+                'type' => 'input',
+                'readOnly' => true
+            )
+        ),
     ),
     'types' => array (
         '0' => array(

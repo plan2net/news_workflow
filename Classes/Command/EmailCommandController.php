@@ -38,7 +38,7 @@ class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
      */
     public function sendMailCommand($pid, $recipientsList) {
 
-        /** @var TYPO3\CMS\Core\Mail\MailMessage $mail */
+        /** @var \TYPO3\CMS\Core\Mail\MailMessage $mail */
         $mail = $this->objectManager->get('TYPO3\CMS\Core\Mail\MailMessage');
         $records = $this->getWorkflowRecords($pid);
         $subject = "Neu kopierte News";
@@ -51,7 +51,7 @@ class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
 
             $msg = $this->getMessage($records);
 
-            /** @var TYPO3\CMS\Core\Mail\MailMessage $mail */
+            /** @var \TYPO3\CMS\Core\Mail\MailMessage $mail */
             $mail->setFrom("no-replay@vu-wien.ac.at");
             $mail->setTo($recipients);
             $mail->setSubject($subject);
@@ -107,23 +107,33 @@ class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
      */
     protected function getMessage($records) {
         $count = count($records);
-        $msg = "Es wurden neue News kopiert! Anzahl: " . $count . ".\n";
+        $msg = "Es wurden neue News kopiert! Anzahl: " . $count . "\n";
 
         foreach($records as $record) {
 
             $oID = $record->getUidNewsOriginal();
             $ID = $record->getUidNews();
-            $author = $this->getDetailsToRecord($oID)->getAuthor();
+
+            /** @var \TYPO3\CMS\Beuser\Domain\Model\BackendUser $backenduser */
+            $backenduser = $record->getReleasePerson();
+
+            $mailAddress = $backenduser->getEmail();
+            $releasedPersonName = $backenduser->getUserName();
+
             $title = $this->getDetailsToRecord($oID)->getTitle();
             $target = $record->getPidTarget();
 
-            if(empty($author)) {
-                $author = "kein Author verfügbar";
+            if(empty($mailAddress)) {
+                $mailAddress = "Keine E-Mail Addresse Verfügbar";
             }
 
-            $msg = $msg .  "Ordner-ID: " . $target;
-            $msg = $msg .  "\n News Record mit dem Titel '".$title ."'[ID Original News: " . $oID . "]";
-            $msg = $msg .  "\n Author: " . $author;
+            if(empty($releasedPersonName)) {
+                $releasedPersonName = "Kein Name angegeben";
+            }
+
+            $msg = $msg .  "\n Ordner-ID: " . $target;
+            $msg = $msg .  "\n News mit dem Titel '".$title ."'[ID Original News: " . $oID . "]";
+            $msg = $msg .  "\n Person, die den News veröffentlicht hat : " . $releasedPersonName . "[" . $mailAddress ."]";
             $msg = $msg .  "\n\n";
         }
         return $msg;
