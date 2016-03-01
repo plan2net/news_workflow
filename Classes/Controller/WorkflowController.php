@@ -126,13 +126,18 @@ class WorkflowController {
 
         $isCopied = $this->isRecordAlreadyCopied($newsRecordUid);
 
-        if($isCopied) {
-            $btn = '<button onclick="ajaxCall(' . $newsRecordUid . ',this); return false;" style="background:white;color:#D3D3D3;border:none;" disabled>' . $trans2 . $script;
-        } else {
-            $btn = '<button onclick="ajaxCall(' . $newsRecordUid . ',this); return false;">' . $trans . $script;
+        if(!empty($newsRecordUid)) {
+            if ($isCopied) {
+                $btn = '<button onclick="ajaxCall(' . $newsRecordUid . ',this); return false;" style="background:white;color:#D3D3D3;border:none;" disabled>' . $trans2 . $script;
+            } else {
+                $btn = '<button onclick="ajaxCall(' . $newsRecordUid . ',this); return false;">' . $trans . $script;
+            }
+
+            return $btn;
+        } else  {
+            return LocalizationUtility::translate('save_btn', 'news_workflow');
         }
 
-        return $btn;
     }
 
 

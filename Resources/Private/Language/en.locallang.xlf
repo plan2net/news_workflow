@@ -21,6 +21,9 @@
             <trans-unit id="error_msg">
                 <target>We are sorry, something went wrong. Please inform you server administrator!</target>
             </trans-unit>
+            <trans-unit id="save_btn">
+                <target>The action can only be used after the record is saved.</target>
+            </trans-unit>
         </body>
     </file>
 </xliff>

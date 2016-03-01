@@ -21,6 +21,9 @@
             <trans-unit id="error_msg">
                 <source>Leider ist ein Fehler aufgetreten. Bitte wenden Sie sich an den Server Administrator!</source>
             </trans-unit>
+            <trans-unit id="save_btn">
+                <source>Diese Aktion kann erst ausgeführt werden, nachdem der Datensatz gespeichert wurde.</source>
+            </trans-unit>
         </body>
     </file>
 </xliff>
