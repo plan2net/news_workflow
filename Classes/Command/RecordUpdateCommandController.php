@@ -135,6 +135,11 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
         return $records;
     }
 
+    /**
+     * @param $recipientsList
+     * @param $msg
+     * @return bool
+     */
     public function sendMail ($recipientsList, $msg)  {
 
         /** @var \TYPO3\CMS\Core\Mail\MailMessage $mail */
@@ -161,6 +166,10 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
             }
     }
 
+    /**
+     * @param $changedRecords
+     * @return string
+     */
     protected function getMessage($changedRecords) {
 
         $count = count($changedRecords);
@@ -225,6 +234,8 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
         if ($record) {
             $record->setSendMailChangedRecord(true);
         }
+        $this->workflowRepository->add($record);
+        $this->workflowRepository->persistAll();
     }
 
 
