@@ -29,7 +29,7 @@ class Relation extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
     protected $dateCreated;
 
     /**
-     * @var int
+     * @var bool
      */
     protected $sendMail;
 
@@ -43,6 +43,11 @@ class Relation extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
      * @var string
      */
     protected $compareHash;
+
+    /**
+     * @var bool
+     */
+    protected $sendMailChangedRecord = false;
 
 
 
@@ -79,7 +84,7 @@ class Relation extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
     }
 
     /**
-     * @return int
+     * @return integer
      */
     public function getDateCreated()
     {
@@ -111,20 +116,21 @@ class Relation extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
     }
 
     /**
-     * @return int
+     * @return boolean
      */
-    public function getSendMail()
+    public function isSendMail()
     {
         return $this->sendMail;
     }
 
     /**
-     * @param int $sendMail
+     * @param boolean $sendMail
      */
     public function setSendMail($sendMail)
     {
         $this->sendMail = $sendMail;
     }
+
 
     /**
      * @return \TYPO3\CMS\Beuser\Domain\Model\BackendUser
@@ -160,16 +166,21 @@ class Relation extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
         $this->compareHash = $compareHash;
     }
 
+    /**
+     * @return boolean
+     */
+    public function isSendMailChangedRecord()
+    {
+        return $this->sendMailChangedRecord;
+    }
 
-
-
-
-
-
-
-
-
-
+    /**
+     * @param boolean $sendMailChangedRecord
+     */
+    public function setSendMailChangedRecord($sendMailChangedRecord)
+    {
+        $this->sendMailChangedRecord = $sendMailChangedRecord;
+    }
 
 
 }

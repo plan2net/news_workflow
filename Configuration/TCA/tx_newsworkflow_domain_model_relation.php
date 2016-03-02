@@ -6,7 +6,7 @@
         'title' => 'News Workflow Records',
     ),
     'interface' => array(
-        'showRecordFieldList' => 'uid_news,uid_news_original, pid_target,author'
+        'showRecordFieldList' => 'uid_news,uid_news_original,pid_target, send_mail_changed_record, compare_hash, release_person'
     ),
     'columns' => array (
         'uid_news' => array(
@@ -64,10 +64,18 @@
                 'readOnly' => true
             )
         ),
+        'send_mail_changed_record' => array(
+            'exclude' => 0,
+            'label' => 'send_mail_changed_record',
+            'config' => array(
+                'type' => 'input',
+                'readOnly' => true
+            ),
+        ),
     ),
     'types' => array (
         '0' => array(
-            'showitem' => 'uid_news,uid_news_original,pid_target, author'
+            'showitem' => 'uid_news,uid_news_original,pid_target, send_mail_changed_record, compare_hash, release_person'
         ),
     ),
 );

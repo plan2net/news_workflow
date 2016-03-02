@@ -8,6 +8,7 @@ send_mail INT(11) NOT NULL,
 crdate INT(11) unsigned DEFAULT '0' NOT NULL,
 release_person INT(11) NOT NULL,
 compare_hash tinytext,
+send_mail_changed_record INT(4) NOT NULL,
 PRIMARY KEY (uid),
 KEY parent (pid)
 );

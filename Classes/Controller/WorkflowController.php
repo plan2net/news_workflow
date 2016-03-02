@@ -72,7 +72,14 @@ class WorkflowController {
         $newsRepository->setDefaultQuerySettings($querySettings);
 
 
+
+        $newsProps = array();
         $originalNews = $newsRepository->findByUid($id, false); // we have to explicitly set respectEnableFields to false here again
+        array_push($newsProps, $originalNews->getTitle());
+        array_push($newsProps, $originalNews->getTeaser());
+        array_push($newsProps, $originalNews->getBodytext());
+
+        $hash = hash('md5', json_encode($newsProps));
 
         if ($originalNews !== null) {
             try {
@@ -103,7 +110,7 @@ class WorkflowController {
             if (empty($dataHandler->errorLog)) {
 
                 foreach ($copyActionInformation as $uidNewsOriginal => $uidNews) {
-                    $this->setWorkflowRelation($uidNews, $uidNewsOriginal, (integer)$configuration['approvalTargetPid']);
+                    $this->setWorkflowRelation($uidNews, $uidNewsOriginal, $hash, (integer)$configuration['approvalTargetPid']);
                 }
                 return true;
             }
@@ -220,7 +227,7 @@ class WorkflowController {
      * @param int $pid
      * @throws \TYPO3\CMS\Extbase\Persistence\Exception\IllegalObjectTypeException
      */
-    protected function setWorkflowRelation ($uidNews, $uidNewsOriginal, $pid = 0)
+    protected function setWorkflowRelation ($uidNews, $uidNewsOriginal, $hash, $pid = 0)
     {
 
         $objectManager = $this->getObjectManager();
@@ -245,6 +252,8 @@ class WorkflowController {
         $relation->setPid($pid);
         $relation->setDateCreated(time());
         $relation->setSendMail(0);
+        $relation->setCompareHash($hash);
+        $relation->setSendMailChangedRecord(false);
 
         $relation->setReleasePerson($currentUser);
 
