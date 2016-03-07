@@ -1,14 +1,14 @@
 <?php
 
- return array(
-    'ctrl' => array (
+return array(
+    'ctrl' => array(
         'label' => 'News Workflow',
         'title' => 'News Workflow Records',
     ),
     'interface' => array(
         'showRecordFieldList' => 'uid_news,uid_news_original,pid_target, send_mail_changed_record, compare_hash, release_person'
     ),
-    'columns' => array (
+    'columns' => array(
         'uid_news' => array(
             'exclude' => 0,
             'label' => 'uid-news',
@@ -48,10 +48,10 @@
                 'readOnly' => true
             )
         ),
-        'release_person' => array (
+        'release_person' => array(
             'exclude' => 0,
             'label' => 'release-person',
-            'config' => array (
+            'config' => array(
                 'type' => 'input',
                 'readOnly' => true
             )
@@ -73,7 +73,7 @@
             ),
         ),
     ),
-    'types' => array (
+    'types' => array(
         '0' => array(
             'showitem' => 'uid_news,uid_news_original,pid_target, send_mail_changed_record, compare_hash, release_person'
         ),

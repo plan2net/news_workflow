@@ -4,10 +4,13 @@ namespace Plan2net\NewsWorkflow\Domain\Model;
 
 /**
  * Class Relation
+ *
  * @package Plan2net\NewsWorkflow\Domain\Model
- * @author Christina Hauk <chauk@plan2.net>
+ * @author  Christina Hauk <chauk@plan2.net>
  */
-class Relation extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
+class Relation extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity
+{
+
     /**
      * @var int
      */
@@ -38,7 +41,6 @@ class Relation extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
      */
     protected $releasePerson;
 
-
     /**
      * @var string
      */
@@ -48,8 +50,6 @@ class Relation extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
      * @var bool
      */
     protected $sendMailChangedRecord = false;
-
-
 
     /**
      * @return int
@@ -131,7 +131,6 @@ class Relation extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
         $this->sendMail = $sendMail;
     }
 
-
     /**
      * @return \TYPO3\CMS\Beuser\Domain\Model\BackendUser
      */
@@ -147,8 +146,6 @@ class Relation extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
     {
         $this->releasePerson = $releasePerson;
     }
-
-
 
     /**
      * @return string
@@ -181,6 +178,5 @@ class Relation extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
     {
         $this->sendMailChangedRecord = $sendMailChangedRecord;
     }
-
 
 }

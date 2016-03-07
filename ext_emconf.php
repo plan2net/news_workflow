@@ -1,22 +1,12 @@
 <?php
 
-/***************************************************************
- * Extension Manager/Repository config file for ext "news workflow".
- *
- *
- * Manual updates:
- * Only the data in the array - everything else is removed by next
- * writing. "version" and "dependencies" must not be touched!
- ***************************************************************/
-
 $EM_CONF[$_EXTKEY] = array(
     'title' => 'News Workflow',
     'description' => '',
     'category' => 'plugin',
-    'author' => 'christina hauk',
+    'author' => 'Christina Hauk',
     'author_email' => 'chauk@plan2.net',
     'shy' => '',
-    'dependencies' => 'cms,news',
     'conflicts' => '',
     'priority' => '',
     'module' => '',
@@ -39,4 +29,4 @@ $EM_CONF[$_EXTKEY] = array(
     ),
     'suggests' => array(),
 );
-?>
+

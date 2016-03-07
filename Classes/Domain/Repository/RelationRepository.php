@@ -6,50 +6,94 @@ use TYPO3\CMS\Extbase\Persistence\Repository;
 
 /**
  * Class RelationRepository
+ *
  * @package Plan2net\NewsWorkflow\Domain\Repository
- * @author Christina Hauk <chauk@plan2.net>
+ * @author  Christina Hauk <chauk@plan2.net>
+ * @author  Wolfgang Klinger <wk@plan2.net>
  */
 class RelationRepository extends Repository
 {
 
-    public function persistAll()
+    public function initializeObject()
     {
-        $this->persistenceManager->persistAll();
+        /** @var $querySettings \TYPO3\CMS\Extbase\Persistence\Generic\Typo3QuerySettings */
+        $querySettings = $this->objectManager->get('TYPO3\CMS\Extbase\Persistence\Generic\Typo3QuerySettings');
+
+        $querySettings->setIgnoreEnableFields(true); // ignore hidden and deleted
+        $querySettings->setRespectStoragePage(false); // ignore storage pid
+
+        $this->setDefaultQuerySettings($querySettings);
     }
 
-    public function findNewRecords ($pid) {
+    /**
+     * @param integer $pid
+     * @return array|\TYPO3\CMS\Extbase\Persistence\QueryResultInterface
+     */
+    public function findNewRecords($pid)
+    {
         $query = $this->createQuery();
         $query->matching(
-            $query->logicalAnd([$query->like('send_mail', 0), $query->like('pid_target', $pid)])
+            $query->logicalAnd(
+                array(
+                    $query->equals('send_mail', 0),
+                    $query->equals('pid_target', (integer)$pid)
+                )
+            )
         );
+
         return $query->execute();
     }
 
-    public function findRecordsToPidTarget($pid) {
+    /**
+     * @param integer $pid
+     * @return array|\TYPO3\CMS\Extbase\Persistence\QueryResultInterface
+     */
+    public function findRecordsToPidTarget($pid)
+    {
         $query = $this->createQuery();
         $query->matching(
-            $query->like('pid_target', $pid)
+            $query->equals('pid_target', (integer)$pid)
         );
 
         return $query->execute();
     }
 
-   public function findRecordsToPidTargetOnlyOnce($pid) {
+    /**
+     * @param integer $pid
+     * @return array|\TYPO3\CMS\Extbase\Persistence\QueryResultInterface
+     */
+    public function findRecordsToPidTargetOnlyOnce($pid)
+    {
         $query = $this->createQuery();
         $query->matching(
-            $query->logicalAnd([$query->like('send_mail_changed_record', 0), $query->like('pid_target', $pid)])
+            $query->logicalAnd(
+                array(
+                    $query->equals('send_mail_changed_record', 0),
+                    $query->equals('pid_target', (integer)$pid)
+                )
+            )
         );
 
         return $query->execute();
     }
 
-    public function findOriginalRecord ($uid) {
+    /**
+     * @param integer $uid
+     * @return object
+     */
+    public function findOriginalRecord($uid)
+    {
         $query = $this->createQuery();
         $query->matching(
-          $query->like('uid_news_original', $uid)
+            $query->equals('uid_news_original', (integer)$uid)
         );
 
         return $query->execute()->getFirst();
+    }
+
+    public function persistAll()
+    {
+        $this->persistenceManager->persistAll();
     }
 
 }

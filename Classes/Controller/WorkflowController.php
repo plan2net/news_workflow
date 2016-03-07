@@ -2,18 +2,20 @@
 
 namespace Plan2net\NewsWorkflow\Controller;
 
+use TYPO3\CMS\Core\FormProtection\Exception;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 
 /**
  * Class WorkflowController
+ *
  * @package Plan2net
- * @author Christina Hauk <chauk@plan2.net>
+ * @author  Christina Hauk <chauk@plan2.net>
+ * @author  Wolfgang Klinger <wk@plan2.net>
  */
-class WorkflowController {
-
-    const ERROR_NO_CONFIGURATION = 100;
+class WorkflowController
+{
 
     /**
      * @var \TYPO3\CMS\Extbase\Object\ObjectManager $objectManager
@@ -30,27 +32,24 @@ class WorkflowController {
      */
     protected $configuration;
 
+    public function injectObjectManager(\TYPO3\CMS\Extbase\Object\ObjectManager $objectManager)
+    {
+        $this->objectManager = $objectManager;
+    }
+
     /**
-     * @param array $params
-     * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler|null $ajaxObj
+     * @param array                                   $params
+     * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxRequestHandler
      */
-    public function renderAjax ($params = array(), \TYPO3\CMS\Core\Http\AjaxRequestHandler &$ajaxObj = null) {
-        $newsId = (integer) GeneralUtility::_GET('newsId');
+    public function renderAjax($params, \TYPO3\CMS\Core\Http\AjaxRequestHandler &$ajaxRequestHandler)
+    {
+        $newsId = (integer)GeneralUtility::_GET('newsId');
         try {
-            $success = $this->copyNews($newsId);
-
-            if($success) {
-                $ajaxObj->addContent('success', LocalizationUtility::translate('success_msg', 'news_workflow'));
-
-            } else {
-                $ajaxObj->setError(LocalizationUtility::translate('error_msg', 'news_workflow'));
-            }
-        }
-        catch (\Exception $e) {
-            if ($e->getCode()) {
-                $this->getLogger()->error($e->getMessage());
-                $ajaxObj->addContent('error', $e->getMessage());
-            }
+            $this->copyNews($newsId);
+            $ajaxRequestHandler->addContent('success', LocalizationUtility::translate('success_msg', 'news_workflow'));
+        } catch (\Exception $e) {
+            $this->getLogger()->error($e->getMessage());
+            $ajaxRequestHandler->addContent('error', $e->getMessage());
         }
     }
 
@@ -58,102 +57,123 @@ class WorkflowController {
      * @param integer $id
      * @return string
      */
-    public function copyNews($id) {
+    public function copyNews($id)
+    {
+        $newsRepository = $this->getNewsRepository();
+
+        $originalNews = $newsRepository->findByUid($id, false); // we have to explicitly set respectEnableFields to false here again
+
+        if ($originalNews) {
+            $this->configuration = $this->getConfiguration($originalNews->getPid());
+            $copyActionInformation = $this->copyNewsWithDataHandler($id);
+
+            $this->postProcessCopiedNews($copyActionInformation, $originalNews);
+        }
+    }
+
+    /**
+     * @param integer $uid
+     * @return array
+     * @throws \Exception
+     */
+    protected function copyNewsWithDataHandler($uid)
+    {
         $objectManager = $this->getObjectManager();
         /** @var \TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler */
         $dataHandler = $objectManager->get('TYPO3\CMS\Core\DataHandling\DataHandler');
+        // copy news to same pid (folder)
+        $dataHandler->start(array(), array());
+        $dataHandler->cmdmap['tx_news_domain_model_news'][(integer)$uid]['copy'] = (integer)$this->configuration['approvalTargetPid'];
+        $dataHandler->process_cmdmap();
 
+        if (!empty($dataHandler->errorLog)) {
+            $this->logger->warning(print_r($dataHandler->errorLog, true));
+            // @todo
+            throw new \Exception('Something went wrong with DataHandler, see log file');
+        }
+
+        return $dataHandler->copyMappingArray_merged['tx_news_domain_model_news'];
+    }
+
+    /**
+     * @param array $copyActionInformation
+     * @param       $originalNews
+     * @throws \TYPO3\CMS\Extbase\Persistence\Exception\IllegalObjectTypeException
+     */
+    protected function postProcessCopiedNews($copyActionInformation, $originalNews)
+    {
+        $newsRepository = $this->getNewsRepository();
+
+        if (is_array($copyActionInformation)) {
+            foreach ($copyActionInformation as $originalNewsId => $copiedNewsId) {
+                $copiedNews = $newsRepository->findByUid($copiedNewsId, false);
+                if ($copiedNews) {
+                    $copiedNews->setHidden(true);
+                    $this->addApprovalCategories(
+                        $copiedNews,
+                        GeneralUtility::trimExplode(',', $this->configuration['categories']),
+                        (boolean)$this->configuration['removePreviousCategories']
+                    );
+                    $newsRepository->add($copiedNews);
+                    // @todo
+                    $hash = hash('md5', json_encode($originalNews));
+                    $this->setWorkflowRelation($copiedNewsId, $originalNewsId, $hash, (integer)$this->configuration['approvalTargetPid']);
+                } else {
+                    // @todo
+                    $this->logger->warning('Copied news (' . $copiedNewsId . ') not found in repository');
+                }
+            }
+        }
+    }
+
+    protected function getNewsRepository()
+    {
         /** @var \GeorgRinger\News\Domain\Repository\NewsRepository $newsRepository */
-        $newsRepository = $objectManager->get('GeorgRinger\News\Domain\Repository\NewsRepository');
+        $newsRepository = $this->objectManager->get('GeorgRinger\News\Domain\Repository\NewsRepository');
+
         // get query settings and remove all constraints (to get ALL records)
         $querySettings = $newsRepository->createQuery()->getQuerySettings();
         $querySettings->setIgnoreEnableFields(true); // ignore hidden and deleted
         $querySettings->setRespectStoragePage(false); // ignore storage pid
         $newsRepository->setDefaultQuerySettings($querySettings);
 
-
-
-        $newsProps = array();
-        $originalNews = $newsRepository->findByUid($id, false); // we have to explicitly set respectEnableFields to false here again
-        array_push($newsProps, $originalNews->getTitle());
-        array_push($newsProps, $originalNews->getTeaser());
-        array_push($newsProps, $originalNews->getBodytext());
-
-        $hash = hash('md5', json_encode($newsProps));
-
-        if ($originalNews !== null) {
-            try {
-                $configuration = $this->getConfiguration($originalNews->getPid());
-            }
-            catch(\Exception $e) {
-                throw $e; // re-throw
-            }
-            // copy news to same pid (folder)
-            $dataHandler->start(array(), array());
-            $dataHandler->cmdmap['tx_news_domain_model_news'][$id]['copy'] = (integer)$configuration['approvalTargetPid'];
-            $dataHandler->process_cmdmap();
-            // result: array ( 'original-id' => 'copied-id')
-            $copyActionInformation = $dataHandler->copyMappingArray_merged['tx_news_domain_model_news'];
-
-            if (is_array($copyActionInformation)) {
-                foreach ($copyActionInformation as $originalNewsId => $copyNewsId) {
-                    $copiedNews = $newsRepository->findByUid($copyNewsId, false);
-                    $copiedNews->setHidden(true);
-                    $this->addApprovalCategories($copiedNews,
-                        GeneralUtility::trimExplode(',', $configuration['approvalCategories']),
-                        (boolean)$configuration['removePreviousCategories']
-                    );
-                    $newsRepository->add($copiedNews);
-                }
-            }
-
-            if (empty($dataHandler->errorLog)) {
-
-                foreach ($copyActionInformation as $uidNewsOriginal => $uidNews) {
-                    $this->setWorkflowRelation($uidNews, $uidNewsOriginal, $hash, (integer)$configuration['approvalTargetPid']);
-                }
-                return true;
-            }
-            else {
-                return false;
-            }
-        }
+        return $newsRepository;
     }
 
     /**
      * @param $params
      * @return string
      */
-    public function getButton($params) {
+    public function getButton($params)
+    {
         $newsRecordUid = (integer)$params['row']['uid'];
-        $path = ExtensionManagementUtility::extRelPath('news_workflow') . 'Resources/Public/Javascript/main.js';
-        $trans = LocalizationUtility::translate('release', 'news_workflow');
-        $trans2 = LocalizationUtility::translate('alreadyReleased', 'news_workflow');
-        $script = '<script src="' . $path . '"></script>';
 
-        $isCopied = $this->isRecordAlreadyCopied($newsRecordUid);
+        $isAlreadyCopied = $this->isRecordAlreadyCopied($newsRecordUid);
 
-        if(!empty($newsRecordUid)) {
-            if ($isCopied) {
-                $btn = '<button onclick="ajaxCall(' . $newsRecordUid . ',this); return false;" style="background:white;color:#D3D3D3;border:none;" disabled>' . $trans2 . $script;
+        if (!empty($newsRecordUid)) {
+            if ($isAlreadyCopied) {
+                $content = '<p>' . LocalizationUtility::translate('alreadyReleased', 'news_workflow') . '</p>';
             } else {
-                $btn = '<button onclick="ajaxCall(' . $newsRecordUid . ',this); return false;">' . $trans . $script;
-            }
+                $path = ExtensionManagementUtility::extRelPath('news_workflow') . 'Resources/Public/Javascript/main.js';
+                $script = '<script src="' . $path . '"></script>';
 
-            return $btn;
-        } else  {
-            return LocalizationUtility::translate('save_btn', 'news_workflow');
+                $content = '<button onclick="ajaxCall(' . $newsRecordUid . ',this);return false;">' .
+                    LocalizationUtility::translate('release', 'news_workflow') . $script;
+            }
+        } else {
+            $content = '<p>' . LocalizationUtility::translate('save_btn', 'news_workflow') . '</p>';
         }
 
+        return $content;
     }
-
 
     /**
      * @param \GeorgRinger\News\Domain\Model\News $news
-     * @param array $categoryIds
-     * @param boolean $removePreviousCategories
+     * @param array                               $categoryIds
+     * @param boolean                             $removePreviousCategories
      */
-    protected function addApprovalCategories($news, $categoryIds, $removePreviousCategories) {
+    protected function addApprovalCategories($news, $categoryIds, $removePreviousCategories = false)
+    {
         $objectManager = $this->getObjectManager();
         /** @var \GeorgRinger\News\Domain\Repository\CategoryRepository $categoryRepository */
         $categoryRepository = $objectManager->get('GeorgRinger\News\Domain\Repository\CategoryRepository');
@@ -170,8 +190,8 @@ class WorkflowController {
         foreach ($categoryIds as $categoryId) {
             /** @var \GeorgRinger\News\Domain\Model\Category $category */
             $category = $categoryRepository->findByUid($categoryId);
-            if ($category !== null) {
-               $categories->attach($category);
+            if ($category) {
+                $categories->attach($category);
             }
         }
 
@@ -183,14 +203,14 @@ class WorkflowController {
      * @return array
      * @throws \Exception
      */
-    protected function getConfiguration($pageId) {
+    protected function getConfiguration($pageId)
+    {
         if (empty($this->configuration)) {
-            $pageTsSettings = \TYPO3\CMS\Backend\Utility\BackendUtility::getPagesTSconfig($pageId);
+            $pageTsSettings = \TYPO3\CMS\Backend\Utility\BackendUtility::getPagesTSconfig((integer)$pageId);
             if (isset($pageTsSettings['user.']['tx_news_workflow.'])) {
                 $pageTsSettings = $pageTsSettings['user.']['tx_news_workflow.'];
-            }
-            else {
-                throw new \Exception('No page TypoScript settings for user.tx_news_workflow found', self::ERROR_NO_CONFIGURATION);
+            } else {
+                throw new \Exception('No page TypoScript settings for user.tx_news_workflow found');
             }
             $this->configuration = $pageTsSettings;
         }
@@ -201,7 +221,8 @@ class WorkflowController {
     /**
      * @return object|\TYPO3\CMS\Extbase\Object\ObjectManager
      */
-    protected function getObjectManager() {
+    protected function getObjectManager()
+    {
         if ($this->objectManager === null) {
             $this->objectManager = GeneralUtility::makeInstance('TYPO3\CMS\Extbase\Object\ObjectManager');
         }
@@ -222,26 +243,24 @@ class WorkflowController {
     }
 
     /**
-     * @param $uidNews
-     * @param $uidNewsOriginal
-     * @param int $pid
+     * @param integer $uidNews
+     * @param integer $uidNewsOriginal
+     * @param integer $pid
      * @throws \TYPO3\CMS\Extbase\Persistence\Exception\IllegalObjectTypeException
      */
-    protected function setWorkflowRelation ($uidNews, $uidNewsOriginal, $hash, $pid = 0)
+    protected function setWorkflowRelation($uidNews, $uidNewsOriginal, $hash, $pid = 0)
     {
-
         $objectManager = $this->getObjectManager();
-        $currentUserID = $GLOBALS["BE_USER"]->user['uid'];
+        $currentUserId = (integer)$GLOBALS['BE_USER']->user['uid'];
 
         /** @var \Plan2net\NewsWorkflow\Domain\Repository\RelationRepository $relationRepository */
         $relationRepository = $objectManager->get('Plan2net\NewsWorkflow\Domain\Repository\RelationRepository');
 
-        /** @var \TYPO3\CMS\Extbase\Domain\Repository\BackendUserRepository $beuserRepository */
-        $beuserRepository = $objectManager->get('TYPO3\CMS\Extbase\Domain\Repository\BackendUserRepository');
+        /** @var \TYPO3\CMS\Extbase\Domain\Repository\BackendUserRepository $backendUserRepository */
+        $backendUserRepository = $objectManager->get('TYPO3\CMS\Extbase\Domain\Repository\BackendUserRepository');
 
         /** @var \TYPO3\CMS\Beuser\Domain\Model\BackendUser $currentUser */
-        $currentUser = $beuserRepository->findByUid($currentUserID);
-
+        $currentUser = $backendUserRepository->findByUid($currentUserId);
 
         /** @var \Plan2net\NewsWorkflow\Domain\Model\Relation $relation */
         $relation = $objectManager->get('Plan2net\NewsWorkflow\Domain\Model\Relation');
@@ -251,7 +270,7 @@ class WorkflowController {
         $relation->setPidTarget($pid);
         $relation->setPid($pid);
         $relation->setDateCreated(time());
-        $relation->setSendMail(0);
+        $relation->setSendMail(false);
         $relation->setCompareHash($hash);
         $relation->setSendMailChangedRecord(false);
 
@@ -265,25 +284,16 @@ class WorkflowController {
      * @param $uid
      * @return bool
      */
-    protected function isRecordAlreadyCopied($uid) {
-
+    protected function isRecordAlreadyCopied($uid)
+    {
         $objectManager = $this->getObjectManager();
 
         /** @var \Plan2net\NewsWorkflow\Domain\Repository\RelationRepository $relationRepository */
         $relationRepository = $objectManager->get('Plan2net\NewsWorkflow\Domain\Repository\RelationRepository');
 
-        $querySettings = $relationRepository->createQuery()->getQuerySettings();
-        $querySettings->setIgnoreEnableFields(true); // ignore hidden and deleted
-        $querySettings->setRespectStoragePage(false); // ignore storage pid
-        $relationRepository->setDefaultQuerySettings($querySettings);
         $record = $relationRepository->findOriginalRecord($uid);
 
-        if(is_object($record)) {
-            return true;
-        } else {
-            return false;
-        }
-
+        return is_object($record) ? true : false;
     }
 
 }

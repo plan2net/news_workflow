@@ -13,7 +13,7 @@
                 <source>Freigeben für Startseite</source>
             </trans-unit>
             <trans-unit id="alreadyReleased">
-                <source>Bereits Freigegeben</source>
+                <source>Bereits freigegeben</source>
             </trans-unit>
             <trans-unit id="success_msg">
                 <source>News Beitrag wurde erfolgreich veröffentlicht!</source>

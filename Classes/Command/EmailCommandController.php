@@ -6,12 +6,12 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Class EmailCommandController
+ *
  * @package Plan2net\NewsWorkflow\Command
- * @author Christina Hauk <chauk@plan2.net>
+ * @author  Christina Hauk <chauk@plan2.net>
  */
 class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandController
 {
-
 
     /**
      * @var \TYPO3\CMS\Extbase\Object\ObjectManager $objectManager
@@ -33,21 +33,21 @@ class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
     }
 
     /**
-     * @param int $pid
+     * @param int    $pid
      * @param string $recipients
      */
-    public function sendMailCommand($pid, $recipientsList) {
+    public function sendMailCommand($pid, $recipientsList)
+    {
 
         /** @var \TYPO3\CMS\Core\Mail\MailMessage $mail */
         $mail = $this->objectManager->get('TYPO3\CMS\Core\Mail\MailMessage');
         $records = $this->getWorkflowRecords($pid);
         $subject = "Neu kopierte News";
 
-
         $recipients = explode(",", $recipientsList);
         $countRecipients = count($recipients);
 
-        if(is_array($records)) {
+        if (is_array($records)) {
 
             $msg = $this->getMessage($records);
 
@@ -58,24 +58,23 @@ class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
             $mail->setBody($msg);
             $result = $mail->send();
 
-            if($result == $countRecipients) {
+            if ($result == $countRecipients) {
                 $this->setSendMailValue($records);
             } else {
                 $this->getLogger()->error("We are sorry!Something went wrong by delivering the email.");
             }
-
         } else {
 
             $this->getLogger()->error("Today are no new records available!");
         }
-
     }
 
     /**
      * @param $pid
      * @return array|bool
      */
-    protected function getWorkflowRecords ($pid) {
+    protected function getWorkflowRecords($pid)
+    {
 
         $records = array();
 
@@ -88,28 +87,29 @@ class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
         $querySettings->setRespectStoragePage(false); // ignore storage pid
         $workflowRepository->setDefaultQuerySettings($querySettings);
 
-        $workflowRecords= $workflowRepository->findNewRecords($pid);
+        $workflowRecords = $workflowRepository->findNewRecords($pid);
 
-        if($workflowRecords->count() > 0) {
+        if ($workflowRecords->count() > 0) {
             foreach ($workflowRecords as $record) {
                 array_push($records, $record);
             }
+
             return $records;
         } else {
             return false;
         }
-
     }
 
     /**
      * @param $records
      * @return string
      */
-    protected function getMessage($records) {
+    protected function getMessage($records)
+    {
         $count = count($records);
         $msg = "Es wurden neue News kopiert! Anzahl: " . $count . "\n";
 
-        foreach($records as $record) {
+        foreach ($records as $record) {
 
             $oID = $record->getUidNewsOriginal();
             $ID = $record->getUidNews();
@@ -123,19 +123,20 @@ class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
             $title = $this->getDetailsToRecord($oID)->getTitle();
             $target = $record->getPidTarget();
 
-            if(empty($mailAddress)) {
+            if (empty($mailAddress)) {
                 $mailAddress = "Keine E-Mail Addresse Verfügbar";
             }
 
-            if(empty($releasedPersonName)) {
+            if (empty($releasedPersonName)) {
                 $releasedPersonName = "Kein Name angegeben";
             }
 
-            $msg = $msg .  "\n Ordner-ID: " . $target;
-            $msg = $msg .  "\n News mit dem Titel '".$title ."'[ID Original News: " . $oID . "]";
-            $msg = $msg .  "\n Person, die den News veröffentlicht hat : " . $releasedPersonName . "[" . $mailAddress ."]";
-            $msg = $msg .  "\n\n";
+            $msg = $msg . "\n Ordner-ID: " . $target;
+            $msg = $msg . "\n News mit dem Titel '" . $title . "'[ID Original News: " . $oID . "]";
+            $msg = $msg . "\n Person, die den News veröffentlicht hat : " . $releasedPersonName . "[" . $mailAddress . "]";
+            $msg = $msg . "\n\n";
         }
+
         return $msg;
     }
 
@@ -143,7 +144,8 @@ class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
      * @param $uid
      * @return \GeorgRinger\News\Domain\Model\News
      */
-    protected function getDetailsToRecord($uid) {
+    protected function getDetailsToRecord($uid)
+    {
 
         /** @var \GeorgRinger\News\Domain\Repository\NewsRepository $newsRepository */
         $newsRepository = $this->objectManager->get('GeorgRinger\News\Domain\Repository\NewsRepository');
@@ -159,15 +161,17 @@ class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
 
     /**
      * Sets the sendMail value to true but only if the recipients got a mail
+     *
      * @param $records
      * @throws \TYPO3\CMS\Extbase\Persistence\Exception\IllegalObjectTypeException
      */
-    protected function setSendMailValue ($records) {
+    protected function setSendMailValue($records)
+    {
 
         /** @var \Plan2net\NewsWorkflow\Domain\Repository\RelationRepository $workflowRepository */
         $workflowRepository = $this->objectManager->get('Plan2net\NewsWorkflow\Domain\Repository\RelationRepository');
 
-        foreach($records as $record) {
+        foreach ($records as $record) {
             $record->setSendMail(1);
             $workflowRepository->add($record);
         }
@@ -186,6 +190,5 @@ class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
 
         return $this->logger;
     }
-
 
 }

@@ -4,7 +4,7 @@ if (!defined('TYPO3_MODE')) {
 }
 
 $temporaryColumn = array(
-    'notification' => array(
+    'tx_newsworkflow_notification' => array(
         'exclude' => 0,
         'label' => 'LLL:EXT:news_workflow/Resources/Private/Language/locallang.xlf:publicDisplay',
         'config' => array(
@@ -14,12 +14,11 @@ $temporaryColumn = array(
     )
 );
 
-
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addTCAcolumns(
     "tx_news_domain_model_news",
     $temporaryColumn
 );
 
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addToAllTCAtypes(
-    "tx_news_domain_model_news", "--div--;LLL:EXT:news_workflow/Resources/Private/Language/locallang.xlf:notification, notification"
+    "tx_news_domain_model_news", "--div--;LLL:EXT:news_workflow/Resources/Private/Language/locallang.xlf:notification, tx_newsworkflow_notification"
 );
