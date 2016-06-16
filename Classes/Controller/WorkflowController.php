@@ -113,7 +113,7 @@ class WorkflowController
                     $copiedNews->setHidden(true);
                     $this->addApprovalCategories(
                         $copiedNews,
-                        GeneralUtility::trimExplode(',', $this->configuration['categories']),
+                        GeneralUtility::trimExplode(',', $this->configuration['approvalCategories']),
                         (boolean)$this->configuration['removePreviousCategories']
                     );
                     $newsRepository->add($copiedNews);
