@@ -43,6 +43,8 @@ class WorkflowController
      */
     public function renderAjax($params, \TYPO3\CMS\Core\Http\AjaxRequestHandler &$ajaxRequestHandler)
     {
+        // we have to inject the object manager manually in this case
+        $this->injectObjectManager(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\CMS\Extbase\Object\ObjectManager'));
         $newsId = (integer)GeneralUtility::_GET('newsId');
         try {
             $this->copyNews($newsId);
