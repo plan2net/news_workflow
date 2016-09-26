@@ -11,11 +11,9 @@ use TYPO3\CMS\Extbase\Persistence\Repository;
  * @author  Christina Hauk <chauk@plan2.net>
  * @author  Wolfgang Klinger <wk@plan2.net>
  */
-class RelationRepository extends Repository
-{
+class RelationRepository extends Repository {
 
-    public function initializeObject()
-    {
+    public function initializeObject() {
         /** @var $querySettings \TYPO3\CMS\Extbase\Persistence\Generic\Typo3QuerySettings */
         $querySettings = $this->objectManager->get('TYPO3\CMS\Extbase\Persistence\Generic\Typo3QuerySettings');
 
@@ -29,8 +27,7 @@ class RelationRepository extends Repository
      * @param integer $pid
      * @return array|\TYPO3\CMS\Extbase\Persistence\QueryResultInterface
      */
-    public function findNewRecords($pid)
-    {
+    public function findNewRecordsByPid($pid) {
         $query = $this->createQuery();
         $query->matching(
             $query->logicalAnd(
@@ -48,8 +45,7 @@ class RelationRepository extends Repository
      * @param integer $pid
      * @return array|\TYPO3\CMS\Extbase\Persistence\QueryResultInterface
      */
-    public function findRecordsToPidTarget($pid)
-    {
+    public function findRecordsByPidTarget($pid) {
         $query = $this->createQuery();
         $query->matching(
             $query->equals('pid_target', (integer)$pid)
@@ -62,8 +58,7 @@ class RelationRepository extends Repository
      * @param integer $pid
      * @return array|\TYPO3\CMS\Extbase\Persistence\QueryResultInterface
      */
-    public function findRecordsToPidTargetOnlyOnce($pid)
-    {
+    public function findRecordsByPidTargetOnlyOnce($pid) {
         $query = $this->createQuery();
         $query->matching(
             $query->logicalAnd(
@@ -81,8 +76,7 @@ class RelationRepository extends Repository
      * @param integer $uid
      * @return object
      */
-    public function findOriginalRecord($uid)
-    {
+    public function findByUidNewsOriginal($uid) {
         $query = $this->createQuery();
         $query->matching(
             $query->equals('uid_news_original', (integer)$uid)
@@ -91,8 +85,7 @@ class RelationRepository extends Repository
         return $query->execute()->getFirst();
     }
 
-    public function persistAll()
-    {
+    public function persistAll() {
         $this->persistenceManager->persistAll();
     }
 

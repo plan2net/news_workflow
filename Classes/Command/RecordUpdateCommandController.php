@@ -10,8 +10,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * @package Plan2net\NewsWorkflow\Command
  * @author  Christina Hauk <chauk@plan2.net>
  */
-class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandController
-{
+class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandController {
 
     /**
      * @var \TYPO3\CMS\Extbase\Object\ObjectManager $objectManager
@@ -27,8 +26,7 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
     /**
      * RecordUpdateCommandController constructor.
      */
-    public function __construct()
-    {
+    public function __construct() {
         if ($this->objectManager === null) {
             $this->objectManager = GeneralUtility::makeInstance('TYPO3\CMS\Extbase\Object\ObjectManager');
         }
@@ -47,8 +45,7 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
      * @param      $recipientsList
      * @param bool $notifyOnlyOnce
      */
-    public function compareHashesCommand($pid, $recipientsList, $notifyOnlyOnce = true)
-    {
+    public function compareHashesCommand($pid, $recipientsList, $notifyOnlyOnce = true) {
         $changedRecords = array();
         $result = false;
 
@@ -86,8 +83,7 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
      * @param $uid
      * @return string
      */
-    protected function getOriginalNewsRecordHash($uid)
-    {
+    protected function getOriginalNewsRecordHash($uid) {
         $newsProps = array();
 
         // get query settings and remove all constraints (to get ALL records)
@@ -114,8 +110,7 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
      * @param $notifyOnlyOnce
      * @return array|\TYPO3\CMS\Extbase\Persistence\QueryResultInterface
      */
-    protected function getAllWorkflowRecords($pid, $notifyOnlyOnce)
-    {
+    protected function getAllWorkflowRecords($pid, $notifyOnlyOnce) {
         // get query settings and remove all constraints (to get ALL records)
         $querySettings = $this->workflowRepository->createQuery()->getQuerySettings();
         $querySettings->setIgnoreEnableFields(true); // ignore hidden and deleted
@@ -123,9 +118,9 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
         $this->workflowRepository->setDefaultQuerySettings($querySettings);
 
         if ($notifyOnlyOnce) {
-            $records = $this->workflowRepository->findRecordsToPidTargetOnlyOnce($pid);
+            $records = $this->workflowRepository->findRecordsByPidTargetOnlyOnce($pid);
         } else {
-            $records = $this->workflowRepository->findRecordsToPidTarget($pid);
+            $records = $this->workflowRepository->findRecordsByPidTarget($pid);
         }
 
         return $records;
@@ -136,8 +131,7 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
      * @param $msg
      * @return bool
      */
-    public function sendMail($recipientsList, $msg)
-    {
+    public function sendMail($recipientsList, $msg) {
         /** @var \TYPO3\CMS\Core\Mail\MailMessage $mail */
         $mail = $this->objectManager->get('TYPO3\CMS\Core\Mail\MailMessage');
         $subject = "Kopierte News die geändert wurden.";
@@ -155,7 +149,7 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
         if ($result == $countRecipients) {
             return true;
         } else {
-            $this->getLogger()->error("We are sorry!Something went wrong by delivering the email.");
+            $this->getLogger()->error("We are sorry! Something went wrong by delivering the email.");
         }
     }
 
@@ -163,8 +157,7 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
      * @param $changedRecords
      * @return string
      */
-    protected function getMessage($changedRecords)
-    {
+    protected function getMessage($changedRecords) {
         $count = count($changedRecords);
         $msg = "Folgende News haben sich geändert. Anzahl: ";
         $msg = $msg . $count . "\n";
@@ -172,7 +165,7 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
         foreach ($changedRecords as $record) {
             $oID = $record->getUidNewsOriginal();
 
-            $title = $this->getDetailsToRecord($oID)->getTitle();
+            $title = $this->getDetailsForNewsRecord($oID)->getTitle();
             $target = $record->getPidTarget();
 
             $msg = $msg . "\n Ordner-ID: " . $target;
@@ -187,8 +180,7 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
      * @param $uid
      * @return \GeorgRinger\News\Domain\Model\News
      */
-    protected function getDetailsToRecord($uid)
-    {
+    protected function getDetailsForNewsRecord($uid) {
         $querySettings = $this->newsRepository->createQuery()->getQuerySettings();
         $querySettings->setIgnoreEnableFields(true); // ignore hidden and deleted
         $querySettings->setRespectStoragePage(false); // ignore storage pid
@@ -201,8 +193,7 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
     /**
      * @return \TYPO3\CMS\Core\Log\Logger
      */
-    protected function getLogger()
-    {
+    protected function getLogger() {
         if ($this->logger === null) {
             $this->logger = GeneralUtility::makeInstance('TYPO3\CMS\Core\Log\LogManager')->getLogger(__CLASS__);
         }
@@ -213,8 +204,7 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
     /**
      * @param $uid
      */
-    protected function turnOffMessageMail($uid)
-    {
+    protected function turnOffMessageMail($uid) {
         // get query settings and remove all constraints (to get ALL records)
         $querySettings = $this->workflowRepository->createQuery()->getQuerySettings();
         $querySettings->setIgnoreEnableFields(true); // ignore hidden and deleted

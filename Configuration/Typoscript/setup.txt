@@ -8,3 +8,13 @@ config.tx_extbase.persistence.classes {
         }
     }
 }
+
+plugin.tx_newsworkflow {
+    settings {
+        emailSender = noreply@vetmeduni.ac.at
+    }
+}
+
+# command controllers are looking for configuration in module.…
+module.tx_newsworkflow < plugin.tx_newsworkflow
+

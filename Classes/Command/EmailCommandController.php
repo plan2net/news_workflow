@@ -10,170 +10,149 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * @package Plan2net\NewsWorkflow\Command
  * @author  Christina Hauk <chauk@plan2.net>
  */
-class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandController
-{
+class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandController {
 
     /**
      * @var \TYPO3\CMS\Extbase\Object\ObjectManager $objectManager
+     * @inject
      */
     protected $objectManager;
+
+    /**
+     * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface
+     * @inject
+     */
+    protected $configurationManager;
 
     /**
      * @var \TYPO3\CMS\Core\Log\Logger
      */
     protected $logger;
 
-    public function __construct()
-    {
-        if ($this->objectManager === null) {
-            $this->objectManager = GeneralUtility::makeInstance('TYPO3\CMS\Extbase\Object\ObjectManager');
-        }
+    /**
+     * @var array
+     */
+    protected $settings = array();
 
-        return $this->objectManager;
+    /**
+     * @var \GeorgRinger\News\Domain\Repository\NewsRepository
+     * @inject
+     */
+    protected $newsRepository;
+
+    /**
+     * @var \Plan2net\NewsWorkflow\Domain\Repository\RelationRepository
+     * @inject
+     */
+    protected $workflowRepository;
+
+    public function __construct() {
+        $this->settings = $this->getSettings();
+    }
+
+    public function initializeCommand() {
+        // remove constraints
+
+        $querySettings = $this->newsRepository->createQuery()->getQuerySettings();
+        $querySettings->setIgnoreEnableFields(true); // ignore hidden and deleted
+        $querySettings->setRespectStoragePage(false); // ignore storage pid
+        $this->newsRepository->setDefaultQuerySettings($querySettings);
+
+        $querySettings = $this->workflowRepository->createQuery()->getQuerySettings();
+        $querySettings->setIgnoreEnableFields(true); // ignore hidden and deleted
+        $querySettings->setRespectStoragePage(false); // ignore storage pid
+        $this->workflowRepository->setDefaultQuerySettings($querySettings);
     }
 
     /**
-     * @param int    $pid
+     * @param integer $pid
      * @param string $recipients
      */
-    public function sendMailCommand($pid, $recipientsList)
-    {
+    public function sendMailCommand($pid, $recipientsList) {
+        $records = $this->workflowRepository->findNewRecordsByPid($pid);
 
         /** @var \TYPO3\CMS\Core\Mail\MailMessage $mail */
         $mail = $this->objectManager->get('TYPO3\CMS\Core\Mail\MailMessage');
-        $records = $this->getWorkflowRecords($pid);
-        $subject = "Neu kopierte News";
+        $subject = 'Neu kopierte News';
 
-        $recipients = explode(",", $recipientsList);
+        $recipients = explode(',', $recipientsList);
         $countRecipients = count($recipients);
 
-        if (is_array($records)) {
-
-            $msg = $this->getMessage($records);
+        if ($records) {
+            $message = $this->getMessage($records);
 
             /** @var \TYPO3\CMS\Core\Mail\MailMessage $mail */
-            $mail->setFrom("no-replay@vu-wien.ac.at");
+            $mail->setFrom($this->settings['emailSender']);
             $mail->setTo($recipients);
             $mail->setSubject($subject);
-            $mail->setBody($msg);
+            $mail->setBody($message);
             $result = $mail->send();
 
             if ($result == $countRecipients) {
                 $this->setSendMailValue($records);
             } else {
-                $this->getLogger()->error("We are sorry!Something went wrong by delivering the email.");
+                $this->getLogger()->error('We are sorry! Something went wrong by delivering the email.');
             }
-        } else {
-
-            $this->getLogger()->error("Today are no new records available!");
         }
     }
 
     /**
-     * @param $pid
-     * @return array|bool
+     * @return array
      */
-    protected function getWorkflowRecords($pid)
-    {
-
-        $records = array();
-
-        /** @var \Plan2net\NewsWorkflow\Domain\Repository\RelationRepository $workflowRepository */
-        $workflowRepository = $this->objectManager->get('Plan2net\NewsWorkflow\Domain\Repository\RelationRepository');
-
-        // get query settings and remove all constraints (to get ALL records)
-        $querySettings = $workflowRepository->createQuery()->getQuerySettings();
-        $querySettings->setIgnoreEnableFields(true); // ignore hidden and deleted
-        $querySettings->setRespectStoragePage(false); // ignore storage pid
-        $workflowRepository->setDefaultQuerySettings($querySettings);
-
-        $workflowRecords = $workflowRepository->findNewRecords($pid);
-
-        if ($workflowRecords->count() > 0) {
-            foreach ($workflowRecords as $record) {
-                array_push($records, $record);
-            }
-
-            return $records;
-        } else {
-            return false;
-        }
+    protected function getSettings() {
+        return $this->configurationManager->getConfiguration(
+            \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface::CONFIGURATION_TYPE_FRAMEWORK,
+            'NewsWorkflow'
+        );
     }
 
     /**
-     * @param $records
+     * @param \TYPO3\CMS\Extbase\Persistence\QueryResultInterface $records
      * @return string
      */
-    protected function getMessage($records)
-    {
-        $count = count($records);
-        $msg = "Es wurden neue News kopiert! Anzahl: " . $count . "\n";
+    protected function getMessage($records) {
+        $message = "Es wurden neue News kopiert! Anzahl: " . $records->count() . "\n";
 
+        /** @var \Plan2net\NewsWorkflow\Domain\Model\Relation $record */
         foreach ($records as $record) {
-
             $oID = $record->getUidNewsOriginal();
-            $ID = $record->getUidNews();
+            $targetPid = $record->getPidTarget();
+            $backendUser = $record->getReleasePerson();
 
-            /** @var \TYPO3\CMS\Beuser\Domain\Model\BackendUser $backenduser */
-            $backenduser = $record->getReleasePerson();
+            $mailAddress = $backendUser->getEmail();
+            $releasedPersonName = $backendUser->getUserName();
 
-            $mailAddress = $backenduser->getEmail();
-            $releasedPersonName = $backenduser->getUserName();
-
-            $title = $this->getDetailsToRecord($oID)->getTitle();
-            $target = $record->getPidTarget();
+            $originalNews = $this->newsRepository->findByUid($oID, false); // disable respectEnableFields
+            $title = $originalNews->getTitle();
 
             if (empty($mailAddress)) {
-                $mailAddress = "Keine E-Mail Addresse Verfügbar";
+                $mailAddress = 'Keine E-Mail Addresse verfügbar';
             }
 
             if (empty($releasedPersonName)) {
-                $releasedPersonName = "Kein Name angegeben";
+                $releasedPersonName = 'Kein Name angegeben';
             }
 
-            $msg = $msg . "\n Ordner-ID: " . $target;
-            $msg = $msg . "\n News mit dem Titel '" . $title . "'[ID Original News: " . $oID . "]";
-            $msg = $msg . "\n Person, die den News veröffentlicht hat : " . $releasedPersonName . "[" . $mailAddress . "]";
-            $msg = $msg . "\n\n";
+            $message = $message . "\n Ordner-ID: " . $targetPid;
+            $message = $message . "\n News mit dem Titel '" . $title . "' (ID Original News: " . $oID . ")";
+            $message = $message . "\n Person, die die News veröffentlicht hat: " . $releasedPersonName . " (" . $mailAddress . ", ID: " . $backendUser->getUid() . ")";
+            $message = $message . "\n\n";
         }
 
-        return $msg;
+        return $message;
     }
 
     /**
-     * @param $uid
-     * @return \GeorgRinger\News\Domain\Model\News
-     */
-    protected function getDetailsToRecord($uid)
-    {
-
-        /** @var \GeorgRinger\News\Domain\Repository\NewsRepository $newsRepository */
-        $newsRepository = $this->objectManager->get('GeorgRinger\News\Domain\Repository\NewsRepository');
-
-        $querySettings = $newsRepository->createQuery()->getQuerySettings();
-        $querySettings->setIgnoreEnableFields(true); // ignore hidden and deleted
-        $querySettings->setRespectStoragePage(false); // ignore storage pid
-        $newsRepository->setDefaultQuerySettings($querySettings);
-        $newsRecord = $newsRepository->findByUid($uid, false);
-
-        return $newsRecord;
-    }
-
-    /**
-     * Sets the sendMail value to true but only if the recipients got a mail
-     *
      * @param $records
-     * @throws \TYPO3\CMS\Extbase\Persistence\Exception\IllegalObjectTypeException
      */
-    protected function setSendMailValue($records)
-    {
-
+    protected function setSendMailValue($records) {
         /** @var \Plan2net\NewsWorkflow\Domain\Repository\RelationRepository $workflowRepository */
         $workflowRepository = $this->objectManager->get('Plan2net\NewsWorkflow\Domain\Repository\RelationRepository');
 
+        /** @var \Plan2net\NewsWorkflow\Domain\Model\Relation $record */
         foreach ($records as $record) {
             $record->setSendMail(1);
-            $workflowRepository->add($record);
+            $workflowRepository->update($record);
         }
 
         $workflowRepository->persistAll();
@@ -182,8 +161,7 @@ class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
     /**
      * @return \TYPO3\CMS\Core\Log\Logger
      */
-    protected function getLogger()
-    {
+    protected function getLogger() {
         if ($this->logger === null) {
             $this->logger = GeneralUtility::makeInstance('TYPO3\CMS\Core\Log\LogManager')->getLogger(__CLASS__);
         }
