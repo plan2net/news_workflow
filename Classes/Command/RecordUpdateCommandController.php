@@ -13,31 +13,22 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandController {
 
     /**
-     *
-     * @var \TYPO3\CMS\Extbase\Object\ObjectManager $objectManager
-     */
-    protected $objectManager;
-
-    /**
-     * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface
+     * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManager
      * @inject
      */
     protected $configurationManager;
 
     /**
-     * @var \GeorgRinger\News\Domain\Repository\NewsRepository $newsRepository
+     * @var \GeorgRinger\News\Domain\Repository\NewsRepository
+     * @inject
      */
     protected $newsRepository;
 
     /**
-     * @var \Plan2net\NewsWorkflow\Domain\Repository\RelationRepository $workflowRepository
+     * @var \Plan2net\NewsWorkflow\Domain\Repository\RelationRepository
+     * @inject
      */
     protected $workflowRepository;
-
-    /**
-     * @var array
-     */
-    protected $settings = array();
 
     /**
      * @var \TYPO3\CMS\Core\Log\Logger
@@ -45,27 +36,45 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
     protected $logger;
 
     /**
-     * RecordUpdateCommandController constructor.
+     * @var array
      */
-    public function __construct() {
-        if ($this->objectManager === null) {
-            $this->objectManager = GeneralUtility::makeInstance('TYPO3\CMS\Extbase\Object\ObjectManager');
-        }
+    protected $settings = array();
 
-        $this->newsRepository = $this->objectManager->get('GeorgRinger\News\Domain\Repository\NewsRepository');
-        $this->workflowRepository = $this->objectManager->get('Plan2net\NewsWorkflow\Domain\Repository\RelationRepository');
+    protected function initialize() {
+        // remove constraints
+        $querySettings = $this->newsRepository->createQuery()->getQuerySettings();
+        $querySettings->setIgnoreEnableFields(true); // ignore hidden and deleted
+        $querySettings->setRespectStoragePage(false); // ignore storage pid
+        $this->newsRepository->setDefaultQuerySettings($querySettings);
 
-        $this->settings = $this->getSettings();
+        $querySettings = $this->workflowRepository->createQuery()->getQuerySettings();
+        $querySettings->setIgnoreEnableFields(true); // ignore hidden and deleted
+        $querySettings->setRespectStoragePage(false); // ignore storage pid
+        $this->workflowRepository->setDefaultQuerySettings($querySettings);
     }
 
     /**
-     * @return array
+     * @param string|null $key
+     * @return array|string
      */
-    protected function getSettings() {
-        return $this->configurationManager->getConfiguration(
-            \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface::CONFIGURATION_TYPE_FRAMEWORK,
-            'NewsWorkflow'
-        );
+    protected function getSettings($key = null) {
+        if (empty($this->settings)) {
+            $settings = $this->configurationManager->getConfiguration(
+                \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface::CONFIGURATION_TYPE_FRAMEWORK,
+                'NewsWorkflow'
+            );
+            $this->settings = $settings['settings'];
+        }
+
+        if (!empty($key)) {
+            if (isset($this->settings[$key])) {
+                return $this->settings[$key];
+            }
+            return '';
+        }
+        else {
+            return $this->settings;
+        }
     }
 
     /**
@@ -74,6 +83,8 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
      * @param bool $notifyOnlyOnce
      */
     public function compareHashesCommand($pid, $recipientsList, $notifyOnlyOnce = true) {
+        $this->initialize();
+
         $changedRecords = array();
         $result = false;
 
@@ -113,13 +124,6 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
      */
     protected function getOriginalNewsRecordHash($uid) {
         $newsProps = array();
-
-        // get query settings and remove all constraints (to get ALL records)
-        $querySettings = $this->newsRepository->createQuery()->getQuerySettings();
-        $querySettings->setIgnoreEnableFields(true); // ignore hidden and deleted
-        $querySettings->setRespectStoragePage(false); // ignore storage pid
-        $this->newsRepository->setDefaultQuerySettings($querySettings);
-
         $news = $this->newsRepository->findByUid($uid, false);
 
         if ($news) {
@@ -139,12 +143,6 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
      * @return array|\TYPO3\CMS\Extbase\Persistence\QueryResultInterface
      */
     protected function getAllWorkflowRecords($pid, $notifyOnlyOnce) {
-        // get query settings and remove all constraints (to get ALL records)
-        $querySettings = $this->workflowRepository->createQuery()->getQuerySettings();
-        $querySettings->setIgnoreEnableFields(true); // ignore hidden and deleted
-        $querySettings->setRespectStoragePage(false); // ignore storage pid
-        $this->workflowRepository->setDefaultQuerySettings($querySettings);
-
         if ($notifyOnlyOnce) {
             $records = $this->workflowRepository->findRecordsByPidTargetOnlyOnce($pid);
         } else {
@@ -168,7 +166,7 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
         $countRecipients = count($recipients);
 
         /** @var \TYPO3\CMS\Core\Mail\MailMessage $mail */
-        $mail->setFrom($this->settings['emailSender']);
+        $mail->setFrom($this->getSettings('emailSender'));
         $mail->setTo($recipients);
         $mail->setSubject($subject);
         $mail->setBody($msg);
@@ -209,10 +207,6 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
      * @return \GeorgRinger\News\Domain\Model\News
      */
     protected function getDetailsForNewsRecord($uid) {
-        $querySettings = $this->newsRepository->createQuery()->getQuerySettings();
-        $querySettings->setIgnoreEnableFields(true); // ignore hidden and deleted
-        $querySettings->setRespectStoragePage(false); // ignore storage pid
-        $this->newsRepository->setDefaultQuerySettings($querySettings);
         $newsRecord = $this->newsRepository->findByUid($uid, false);
 
         return $newsRecord;
@@ -233,12 +227,6 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
      * @param integer $uid
      */
     protected function turnOffMessageMail($uid) {
-        // get query settings and remove all constraints (to get ALL records)
-        $querySettings = $this->workflowRepository->createQuery()->getQuerySettings();
-        $querySettings->setIgnoreEnableFields(true); // ignore hidden and deleted
-        $querySettings->setRespectStoragePage(false); // ignore storage pid
-        $this->workflowRepository->setDefaultQuerySettings($querySettings);
-
         /** @var  \Plan2net\NewsWorkflow\Domain\Model\Relation $record */
         $record = $this->workflowRepository->findByUid($uid);
         if ($record) {

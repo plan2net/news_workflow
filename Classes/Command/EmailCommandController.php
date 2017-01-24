@@ -13,26 +13,10 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandController {
 
     /**
-     * @var \TYPO3\CMS\Extbase\Object\ObjectManager $objectManager
-     * @inject
-     */
-    protected $objectManager;
-
-    /**
-     * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface
+     * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManager
      * @inject
      */
     protected $configurationManager;
-
-    /**
-     * @var \TYPO3\CMS\Core\Log\Logger
-     */
-    protected $logger;
-
-    /**
-     * @var array
-     */
-    protected $settings = array();
 
     /**
      * @var \GeorgRinger\News\Domain\Repository\NewsRepository
@@ -46,13 +30,18 @@ class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
      */
     protected $workflowRepository;
 
-    public function __construct() {
-        $this->settings = $this->getSettings();
-    }
+    /**
+     * @var \TYPO3\CMS\Core\Log\Logger
+     */
+    protected $logger;
 
-    public function initializeCommand() {
+    /**
+     * @var array
+     */
+    protected $settings = array();
+
+    protected function initialize() {
         // remove constraints
-
         $querySettings = $this->newsRepository->createQuery()->getQuerySettings();
         $querySettings->setIgnoreEnableFields(true); // ignore hidden and deleted
         $querySettings->setRespectStoragePage(false); // ignore storage pid
@@ -69,6 +58,8 @@ class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
      * @param string $recipients
      */
     public function sendMailCommand($pid, $recipientsList) {
+        $this->initialize();
+
         $records = $this->workflowRepository->findNewRecordsByPid($pid);
 
         /** @var \TYPO3\CMS\Core\Mail\MailMessage $mail */
@@ -82,7 +73,7 @@ class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
             $message = $this->getMessage($records);
 
             /** @var \TYPO3\CMS\Core\Mail\MailMessage $mail */
-            $mail->setFrom($this->settings['emailSender']);
+            $mail->setFrom($this->getSettings('emailSender'));
             $mail->setTo($recipients);
             $mail->setSubject($subject);
             $mail->setBody($message);
@@ -97,13 +88,27 @@ class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
     }
 
     /**
-     * @return array
+     * @param string|null $key
+     * @return array|string
      */
-    protected function getSettings() {
-        return $this->configurationManager->getConfiguration(
-            \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface::CONFIGURATION_TYPE_FRAMEWORK,
-            'NewsWorkflow'
-        );
+    protected function getSettings($key = null) {
+        if (empty($this->settings)) {
+            $settings = $this->configurationManager->getConfiguration(
+                \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface::CONFIGURATION_TYPE_FRAMEWORK,
+                'NewsWorkflow'
+            );
+            $this->settings = $settings['settings'];
+        }
+
+        if (!empty($key)) {
+            if (isset($this->settings[$key])) {
+                return $this->settings[$key];
+            }
+            return '';
+        }
+        else {
+            return $this->settings;
+        }
     }
 
     /**
