@@ -143,7 +143,7 @@ class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
     }
 
     /**
-     * @param $records
+     * @param array $records
      */
     protected function setSendMailValue($records) {
         /** @var \Plan2net\NewsWorkflow\Domain\Repository\RelationRepository $workflowRepository */
@@ -151,7 +151,7 @@ class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
 
         /** @var \Plan2net\NewsWorkflow\Domain\Model\Relation $record */
         foreach ($records as $record) {
-            $record->setSendMail(1);
+            $record->setSendMail(true);
             $workflowRepository->update($record);
         }
 

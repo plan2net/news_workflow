@@ -13,15 +13,36 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandController {
 
     /**
+     *
      * @var \TYPO3\CMS\Extbase\Object\ObjectManager $objectManager
      */
     protected $objectManager;
 
-    /** @var \GeorgRinger\News\Domain\Repository\NewsRepository $newsRepository */
+    /**
+     * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface
+     * @inject
+     */
+    protected $configurationManager;
+
+    /**
+     * @var \GeorgRinger\News\Domain\Repository\NewsRepository $newsRepository
+     */
     protected $newsRepository;
 
-    /** @var \Plan2net\NewsWorkflow\Domain\Repository\RelationRepository $workflowRepository */
+    /**
+     * @var \Plan2net\NewsWorkflow\Domain\Repository\RelationRepository $workflowRepository
+     */
     protected $workflowRepository;
+
+    /**
+     * @var array
+     */
+    protected $settings = array();
+
+    /**
+     * @var \TYPO3\CMS\Core\Log\Logger
+     */
+    protected $logger;
 
     /**
      * RecordUpdateCommandController constructor.
@@ -33,16 +54,23 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
 
         $this->newsRepository = $this->objectManager->get('GeorgRinger\News\Domain\Repository\NewsRepository');
         $this->workflowRepository = $this->objectManager->get('Plan2net\NewsWorkflow\Domain\Repository\RelationRepository');
+
+        $this->settings = $this->getSettings();
     }
 
     /**
-     * @var \TYPO3\CMS\Core\Log\Logger
+     * @return array
      */
-    protected $logger;
+    protected function getSettings() {
+        return $this->configurationManager->getConfiguration(
+            \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface::CONFIGURATION_TYPE_FRAMEWORK,
+            'NewsWorkflow'
+        );
+    }
 
     /**
-     * @param      $pid
-     * @param      $recipientsList
+     * @param integer $pid
+     * @param string $recipientsList
      * @param bool $notifyOnlyOnce
      */
     public function compareHashesCommand($pid, $recipientsList, $notifyOnlyOnce = true) {
@@ -80,7 +108,7 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
     }
 
     /**
-     * @param $uid
+     * @param integer $uid
      * @return string
      */
     protected function getOriginalNewsRecordHash($uid) {
@@ -106,8 +134,8 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
     }
 
     /**
-     * @param $pid
-     * @param $notifyOnlyOnce
+     * @param integer $pid
+     * @param boolean $notifyOnlyOnce
      * @return array|\TYPO3\CMS\Extbase\Persistence\QueryResultInterface
      */
     protected function getAllWorkflowRecords($pid, $notifyOnlyOnce) {
@@ -127,8 +155,8 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
     }
 
     /**
-     * @param $recipientsList
-     * @param $msg
+     * @param string $recipientsList
+     * @param string $msg
      * @return bool
      */
     public function sendMail($recipientsList, $msg) {
@@ -140,7 +168,7 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
         $countRecipients = count($recipients);
 
         /** @var \TYPO3\CMS\Core\Mail\MailMessage $mail */
-        $mail->setFrom("no-replay@vu-wien.ac.at");
+        $mail->setFrom($this->settings['emailSender']);
         $mail->setTo($recipients);
         $mail->setSubject($subject);
         $mail->setBody($msg);
@@ -154,7 +182,7 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
     }
 
     /**
-     * @param $changedRecords
+     * @param array $changedRecords
      * @return string
      */
     protected function getMessage($changedRecords) {
@@ -177,7 +205,7 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
     }
 
     /**
-     * @param $uid
+     * @param integer $uid
      * @return \GeorgRinger\News\Domain\Model\News
      */
     protected function getDetailsForNewsRecord($uid) {
@@ -202,7 +230,7 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
     }
 
     /**
-     * @param $uid
+     * @param integer $uid
      */
     protected function turnOffMessageMail($uid) {
         // get query settings and remove all constraints (to get ALL records)
