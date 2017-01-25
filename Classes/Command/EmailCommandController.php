@@ -60,6 +60,7 @@ class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
     public function sendMailCommand($pid, $recipientsList) {
         $this->initialize();
 
+        /** @var \TYPO3\CMS\Extbase\Persistence\QueryResultInterface $records */
         $records = $this->workflowRepository->findNewRecordsByPid($pid);
 
         /** @var \TYPO3\CMS\Core\Mail\MailMessage $mail */
@@ -69,7 +70,7 @@ class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
         $recipients = explode(',', $recipientsList);
         $countRecipients = count($recipients);
 
-        if ($records) {
+        if ($records && $records->count() > 0) {
             $message = $this->getMessage($records);
 
             /** @var \TYPO3\CMS\Core\Mail\MailMessage $mail */
@@ -148,7 +149,7 @@ class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
     }
 
     /**
-     * @param array $records
+     * @param \TYPO3\CMS\Extbase\Persistence\QueryResultInterface $records
      */
     protected function setSendMailValue($records) {
         /** @var \Plan2net\NewsWorkflow\Domain\Repository\RelationRepository $workflowRepository */
