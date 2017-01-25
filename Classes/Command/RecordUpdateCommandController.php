@@ -109,15 +109,14 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
                     }
                 }
             } else {
-                $message = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+                $message = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\CMS\Core\Messaging\FlashMessage',
                     'Something went wrong by delivering the mails to all the recipients!',
                     null,
                     \TYPO3\CMS\Core\Messaging\FlashMessage::WARNING,
                     true
                 );
                 /** @var \TYPO3\CMS\Core\Messaging\FlashMessageService $flashMessageService */
-                $flashMessageService = $this->objectManager->get(
-                    \TYPO3\CMS\Core\Messaging\FlashMessageService::class);
+                $flashMessageService = $this->objectManager->get('TYPO3\CMS\Core\Messaging\FlashMessageService');
                 /** @var \TYPO3\CMS\Core\Messaging\FlashMessageQueue $messageQueue */
                 $messageQueue = $flashMessageService->getMessageQueueByIdentifier();
                 $messageQueue->enqueue($message);
