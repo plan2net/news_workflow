@@ -84,9 +84,7 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
      */
     public function compareHashesCommand($pid, $recipientsList, $notifyOnlyOnce = true) {
         $this->initialize();
-
         $changedRecords = array();
-        $result = false;
 
         /** @var \Plan2net\NewsWorkflow\Domain\Model\Relation $records */
         $records = $this->getAllWorkflowRecords($pid, $notifyOnlyOnce);
@@ -103,18 +101,27 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
 
         if (!empty($changedRecords)) {
             $msg = $this->getMessage($changedRecords);
-            $result = $this->sendMail($recipientsList, $msg);
-        }
-
-        if ($result) {
-            if ($notifyOnlyOnce) {
-                foreach ($changedRecords as $record) {
-                    $uid = $record->getUid();
-                    $this->turnOffMessageMail($uid);
+            if ($this->sendMail($recipientsList, $msg)) {
+                if ($notifyOnlyOnce) {
+                    foreach ($changedRecords as $record) {
+                        $uid = $record->getUid();
+                        $this->turnOffMessageMail($uid);
+                    }
                 }
+            } else {
+                $message = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+                    'Something went wrong by delivering the mails to all the recipients!',
+                    null,
+                    \TYPO3\CMS\Core\Messaging\FlashMessage::WARNING,
+                    true
+                );
+                /** @var \TYPO3\CMS\Core\Messaging\FlashMessageService $flashMessageService */
+                $flashMessageService = $this->objectManager->get(
+                    \TYPO3\CMS\Core\Messaging\FlashMessageService::class);
+                /** @var \TYPO3\CMS\Core\Messaging\FlashMessageQueue $messageQueue */
+                $messageQueue = $flashMessageService->getMessageQueueByIdentifier();
+                $messageQueue->enqueue($message);
             }
-        } else {
-            print("Something went wrong by delivering the mails to the recipients! Please send the mails again");
         }
     }
 
@@ -172,11 +179,7 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
         $mail->setBody($msg);
         $result = $mail->send();
 
-        if ($result == $countRecipients) {
-            return true;
-        } else {
-            $this->getLogger()->error("We are sorry! Something went wrong by delivering the email.");
-        }
+        return ($result == $countRecipients) ? true : false;
     }
 
     /**
