@@ -188,17 +188,32 @@ class RecordUpdateCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\Co
     protected function getMessage($changedRecords) {
         $count = count($changedRecords);
         $msg = "Folgende News haben sich geändert. Anzahl: ";
-        $msg = $msg . $count . "\n";
+        $msg .= $count . "\r\n\r\n";
 
+        /** @var \Plan2net\NewsWorkflow\Domain\Model\Relation $record */
         foreach ($changedRecords as $record) {
             $oID = $record->getUidNewsOriginal();
+            $originalNewsRecord = $this->getDetailsForNewsRecord($oID);
 
-            $title = $this->getDetailsForNewsRecord($oID)->getTitle();
             $target = $record->getPidTarget();
+            $msg .= "Ordner-ID: " . $target;
 
-            $msg = $msg . "\n Ordner-ID: " . $target;
-            $msg = $msg . "\n News mit dem Titel '" . $title . "'[ID Original News: " . $oID . "]";
-            $msg = $msg . "\n\n";
+            if ($originalNewsRecord) {
+                $title = $originalNewsRecord->getTitle();
+                $msg .= "  News mit dem Titel '" . $title . "' (ID Original News: " . $oID . ")" . "\r\n";
+            }
+            else {
+                $copiedNewsRecord = $this->getDetailsForNewsRecord($record->getUidNews());
+                if ($copiedNewsRecord) {
+                    $title = $copiedNewsRecord->getTitle();
+                    $msg .= "  News mit dem Titel '" . $title . "' (die Original News wurde gelöscht)" . "\r\n";
+                }
+                else {
+                    // ignore this case, the copied news was removed
+                }
+            }
+
+            $msg .= "\r\n";
         }
 
         return $msg;
