@@ -6,8 +6,7 @@ function ajaxCall(newsId, btn) {
 			newsId: newsId
 		},
 		success: function (jqXHRObject, status) {
-			console.log(status);
-			console.log(jqXHRObject);
+			
 			if (status !== 'success') {
 				top.TYPO3.Notification.error("Newsworklow", jqXHRObject, Notification.ERROR, 5);
 			}
