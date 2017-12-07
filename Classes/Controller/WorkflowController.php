@@ -84,7 +84,7 @@ class WorkflowController {
         $dataHandler->process_cmdmap();
 
         if (!empty($dataHandler->errorLog)) {
-            $this->logger->warning(print_r($dataHandler->errorLog, true));
+            $this->getLogger()->warning(print_r($dataHandler->errorLog, true));
             // @todo
             throw new \Exception('Something went wrong with DataHandler, see log file');
         }
@@ -116,7 +116,7 @@ class WorkflowController {
                     $this->setWorkflowRelation($copiedNewsId, $originalNewsId, $hash, (integer)$this->configuration['approvalTargetPid']);
                 } else {
                     // @todo
-                    $this->logger->warning('Copied news (' . $copiedNewsId . ') not found in repository');
+                    $this->getLogger()->warning('Copied news (' . $copiedNewsId . ') not found in repository');
                 }
             }
         }
