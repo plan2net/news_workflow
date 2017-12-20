@@ -11,7 +11,7 @@ config.tx_extbase.persistence.classes {
 
 plugin.tx_newsworkflow {
     settings {
-        emailSender = noreply@vetmeduni.ac.at
+        emailSender = EMAIL_NOT_SET
     }
 }
 
