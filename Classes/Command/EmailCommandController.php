@@ -101,11 +101,12 @@ class EmailCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
             $this->settings = $settings['settings'];
         }
 
-        if (!empty($key)) {
-            if (isset($this->settings[$key])) {
+        if (!empty($key) && isset($this->settings[$key])) {
+            if (filter_var($this->settings[$key], FILTER_VALIDATE_EMAIL)) {
                 return $this->settings[$key];
+            } else {
+                return null;
             }
-            return '';
         }
         else {
             return $this->settings;
