@@ -9,9 +9,10 @@ config.tx_extbase.persistence.classes {
     }
 }
 
+# get emailSender from constants
 plugin.tx_newsworkflow {
     settings {
-        emailSender = EMAIL_NOT_SET
+        emailSender = {$plugin.tx_newsworkflow.emailSender}
     }
 }
 

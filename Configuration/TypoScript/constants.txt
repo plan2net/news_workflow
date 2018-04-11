@@ -1,0 +1,4 @@
+plugin.tx_newsworkflow {
+    # cat=News Workflow; type=string; label=Set customized email address of the email sender
+    emailSender =
+}
