@@ -2,7 +2,7 @@
   "name": "plan2net/news-workflow",
   "type": "typo3-cms-extension",
   "description": "News Workflow",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "autoload": {
     "psr-4": {
       "Plan2net\\NewsWorkflow\\": "Classes"
