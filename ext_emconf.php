@@ -18,11 +18,11 @@ $EM_CONF[$_EXTKEY] = array(
     'clearCacheOnLoad' => 0,
     'lockType' => '',
     'author_company' => '',
-    'version' => '0.4.4',
+    'version' => '0.4.5',
     'constraints' => array(
         'depends' => array(
             'cms' => '8.7.0-8.7.99',
-            'news' => '6.1.0-6.3.99',
+            'news' => '6.1.0-7.0.99',
         ),
         'conflicts' => array(),
         'suggests' => array(),
